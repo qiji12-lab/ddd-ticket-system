@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TickeTide - 轻量级工单管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css?v=6">
+</head>
+<body>
+    <!-- 登录页面 -->
+    <div id="loginPage" class="login-page">
+        <div class="login-container">
+            <!-- 左侧品牌展示 -->
+            <div class="login-brand">
+                <div class="brand-logo">
+                    <i class="bi bi-ticket-detailed-fill"></i>
+                    <span>TickeTide</span>
+                </div>
+                <div class="brand-hero">
+                    <h1>轻量级工单<br>管理系统</h1>
+                    <p>高效的工单发布、派单、抢单与状态流转管理，让团队协作更顺畅。</p>
+                </div>
+                <ul class="brand-features">
+                    <li><i class="bi bi-lightning-charge-fill"></i> 工单全生命周期管理</li>
+                    <li><i class="bi bi-people-fill"></i> 多角色权限协同</li>
+                    <li><i class="bi bi-bell-fill"></i> 实时消息邮件通知</li>
+                </ul>
+            </div>
+
+            <!-- 右侧登录表单 -->
+            <div class="login-card">
+                <div class="login-header">
+                    <i class="bi bi-shield-lock-fill"></i>
+                    <h2>欢迎登录</h2>
+                    <p>请输入您的账号信息</p>
+                </div>
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label class="form-label"><i class="bi bi-person"></i> 用户名</label>
+                        <input type="text" class="form-control" id="loginUsername" required placeholder="请输入用户名">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label"><i class="bi bi-lock"></i> 密码</label>
+                        <input type="password" class="form-control" id="loginPassword" required placeholder="请输入密码">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 py-2">
+                        <i class="bi bi-box-arrow-in-right"></i> 登 录
+                    </button>
+                </form>
+                <div class="text-center mt-3">
+                    <small class="text-muted">还没有账号？<a href="#" id="showRegisterLink" class="text-primary">立即注册</a></small>
+                </div>
+
+                <!-- 注册表单（默认隐藏） -->
+                <form id="registerForm" class="d-none">
+                    <div class="mb-3">
+                        <label class="form-label"><i class="bi bi-person"></i> 用户名</label>
+                        <input type="text" class="form-control" id="regUsername" required minlength="3" placeholder="3-50个字符">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label"><i class="bi bi-lock"></i> 密码</label>
+                        <input type="password" class="form-control" id="regPassword" required minlength="6" placeholder="至少6位">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label"><i class="bi bi-envelope"></i> 邮箱</label>
+                        <input type="email" class="form-control" id="regEmail" required placeholder="请输入邮箱">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label d-block"><i class="bi bi-person-badge"></i> 注册角色</label>
+                        <div class="role-selector">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="regRole" id="roleCustomer" value="CUSTOMER" checked>
+                                <label class="form-check-label" for="roleCustomer">
+                                    <strong>普通用户</strong>
+                                    <small class="text-muted d-block">提交工单，跟踪处理进度</small>
+                                </label>
+                            </div>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="radio" name="regRole" id="roleAgent" value="AGENT">
+                                <label class="form-check-label" for="roleAgent">
+                                    <strong>客服人员</strong>
+                                    <small class="text-muted d-block">抢单处理工单，跟进解决问题</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100 py-2">
+                        <i class="bi bi-person-plus"></i> 注 册
+                    </button>
+                </form>
+                <div class="text-center mt-3 d-none" id="backToLoginWrap">
+                    <small class="text-muted">已有账号？<a href="#" id="showLoginLink" class="text-primary">返回登录</a></small>
+                </div>
+
+                <div class="login-footer" id="loginTestAccounts">
+                    <p>测试账号（密码均为 123456），点击可快速填充：</p>
+                    <div class="test-accounts">
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="fillLogin('admin')">admin</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="fillLogin('agent01')">agent01</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="fillLogin('agent02')">agent02</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="fillLogin('customer01')">customer01</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="fillLogin('customer02')">customer02</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主应用 -->
+    <div id="mainApp" class="d-none">
+        <nav class="navbar navbar-expand-lg navbar-light app-navbar sticky-top">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">
+                    <i class="bi bi-ticket-detailed-fill"></i> TickeTide
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#" data-page="dashboard">
+                                <i class="bi bi-speedometer2"></i> 工作台
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-page="tickets">
+                                <i class="bi bi-list-check"></i> 工单管理
+                            </a>
+                        </li>
+                        <li class="nav-item" id="navCreate" style="display:none;">
+                            <a class="nav-link" href="#" data-page="create">
+                                <i class="bi bi-plus-circle"></i> 创建工单
+                            </a>
+                        </li>
+                    </ul>
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                <i class="bi bi-person-circle"></i>
+                                <span id="currentUser">用户</span>
+                                <span class="badge role-badge ms-1" id="currentRole">角色</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#" onclick="logout()"><i class="bi bi-box-arrow-right"></i> 退出登录</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <main class="container-fluid mt-4">
+            <!-- 工作台 -->
+            <div id="dashboard" class="page">
+                <!-- 欢迎横幅 -->
+                <div class="welcome-banner">
+                    <div>
+                        <h3 id="welcomeText">你好，欢迎使用 TickeTide</h3>
+                        <p id="welcomeSubText">在这里管理你的工单，跟踪每一个问题的处理进度</p>
+                    </div>
+                    <div class="d-none d-md-block">
+                        <i class="bi bi-clipboard-data" style="font-size:3.5rem;opacity:0.5;"></i>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-md-3">
+                        <div class="stat-card stat-pending">
+                            <div class="stat-icon"><i id="statIcon1" class="bi bi-hourglass-split"></i></div>
+                            <div class="stat-info">
+                                <h3 id="statPending">0</h3>
+                                <p id="statLabel1">待接单</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card stat-processing">
+                            <div class="stat-icon"><i id="statIcon2" class="bi bi-play-circle"></i></div>
+                            <div class="stat-info">
+                                <h3 id="statProcessing">0</h3>
+                                <p id="statLabel2">处理中</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card stat-confirm">
+                            <div class="stat-icon"><i id="statIcon3" class="bi bi-check2-square"></i></div>
+                            <div class="stat-info">
+                                <h3 id="statResolved">0</h3>
+                                <p id="statLabel3">待确认</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card stat-closed">
+                            <div class="stat-icon"><i id="statIcon4" class="bi bi-x-circle"></i></div>
+                            <div class="stat-info">
+                                <h3 id="statClosed">0</h3>
+                                <p id="statLabel4">已关闭</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-clock-history"></i> 最近工单</h5>
+                        <button class="btn btn-primary btn-sm" onclick="switchPage('tickets')">
+                            查看全部 <i class="bi bi-arrow-right"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="recentTickets" class="list-group"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 工单列表 -->
+            <div id="tickets" class="page d-none">
+                <div class="page-header">
+                    <div>
+                        <div class="page-title">工单管理</div>
+                        <div class="page-subtitle">查看、筛选并处理所有工单</div>
+                    </div>
+                    <button class="btn btn-primary" id="btnCreateTicket" onclick="switchPage('create')" style="display:none;">
+                        <i class="bi bi-plus-circle"></i> 创建工单
+                    </button>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row g-2 filter-bar mb-3 align-items-center">
+                            <div class="col-md-3 col-6">
+                                <input type="text" class="form-control" id="searchInput" placeholder="搜索标题或描述...">
+                            </div>
+                            <div class="col-md-2 col-6 d-none" id="scopeFilterCol">
+                                <select class="form-select" id="scopeFilter">
+                                    <option value="">全部工单（抢单池）</option>
+                                    <option value="mine">我负责的</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 col-6">
+                                <select class="form-select" id="statusFilter">
+                                    <option value="">全部状态</option>
+                                    <option value="PENDING">待接单</option>
+                                    <option value="ASSIGNED">已分配</option>
+                                    <option value="PROCESSING">处理中</option>
+                                    <option value="RESOLVED">已解决</option>
+                                    <option value="PENDING_CONFIRM">待确认</option>
+                                    <option value="REOPENED">已重开</option>
+                                    <option value="CLOSED">已关闭</option>
+                                    <option value="CANCELLED">已取消</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 col-6">
+                                <select class="form-select" id="priorityFilter">
+                                    <option value="">全部优先级</option>
+                                    <option value="HIGH">高优先级</option>
+                                    <option value="MEDIUM">中优先级</option>
+                                    <option value="LOW">低优先级</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 col-6">
+                                <select class="form-select" id="categoryFilter">
+                                    <option value="">全部分类</option>
+                                    <option value="TECHNICAL">技术故障</option>
+                                    <option value="ACCOUNT">账号问题</option>
+                                    <option value="COMPLAINT">投诉建议</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <input type="date" class="form-control" id="startTimeFilter" title="提交时间（起）">
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <input type="date" class="form-control" id="endTimeFilter" title="提交时间（止）">
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-outline-primary px-3" onclick="searchTickets()">
+                                    <i class="bi bi-search"></i> 筛选
+                                </button>
+                                <button class="btn btn-outline-secondary px-3" onclick="resetFilters()">
+                                    <i class="bi bi-arrow-repeat"></i> 重置
+                                </button>
+                            </div>
+                            <div class="col-auto ms-auto">
+                                <select class="form-select d-inline-block w-auto" id="pageSize">
+                                    <option value="5">5条/页</option>
+                                    <option value="10" selected>10条/页</option>
+                                    <option value="20">20条/页</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>标题</th>
+                                        <th>状态</th>
+                                        <th>优先级</th>
+                                        <th id="thCustomer">创建人</th>
+                                        <th>经办人</th>
+                                        <th>更新时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ticketTable"></tbody>
+                            </table>
+                        </div>
+
+                        <nav aria-label="Page navigation">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span id="pageInfo" class="text-muted"></span>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-primary" id="prevPage">上一页</button>
+                                    <button class="btn btn-sm btn-outline-primary" id="nextPage">下一页</button>
+                                </div>
+                            </div>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 创建工单 -->
+            <div id="create" class="page d-none">
+                <div class="page-header">
+                    <div>
+                        <div class="page-title">创建工单</div>
+                        <div class="page-subtitle">提交新的问题或需求，我们将尽快为你处理</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <form id="createForm" class="mx-auto" style="max-width:680px;">
+                            <div class="mb-3">
+                                <label class="form-label">工单标题 *</label>
+                                <input type="text" class="form-control" id="title" required maxlength="200">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">工单描述</label>
+                                <textarea class="form-control" id="description" rows="4"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">问题分类 *</label>
+                                <select class="form-select" id="category" required>
+                                    <option value="">请选择问题分类</option>
+                                    <option value="TECHNICAL" selected>技术故障</option>
+                                    <option value="ACCOUNT">账号问题</option>
+                                    <option value="COMPLAINT">投诉建议</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">优先级 *</label>
+                                <select class="form-select" id="priority" required>
+                                    <option value="">请选择优先级</option>
+                                    <option value="HIGH">高</option>
+                                    <option value="MEDIUM" selected>中</option>
+                                    <option value="LOW">低</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">附件上传（可选，支持截图/日志，单文件 ≤ 10MB）</label>
+                                <input type="file" class="form-control" id="attachments" multiple>
+                                <div id="attachmentPreview" class="attachment-preview"></div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg"></i> 提交工单
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="switchPage('tickets')">
+                                取消
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 工单详情（模态框） -->
+            <div class="modal fade" id="ticketDetailModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title"><i class="bi bi-ticket"></i> 工单详情</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body" id="ticketDetailBody"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast 通知 -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/app.js?v=8"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+2026-09-21 15:30:12 ERROR [order-service] com.demo.OrderService - Failed to create order: java.sql.SQLException: Connection timed out after 30000ms
+2026-09-21 15:30:15 ERROR [order-service] com.demo.OrderService - Retry 1/3 failed, will retry in 2s
+2026-09-21 15:30:17 ERROR [order-service] com.demo.OrderService - Retry 2/3 failed, will retry in 4s
+2026-09-21 15:30:21 ERROR [order-service] com.demo.OrderService - Retry 3/3 failed, giving up
+2026-09-21 15:30:21 WARN  [order-service] com.demo.OrderService - Fallback triggered, returning cached result
+Stack trace:
+  at com.demo.OrderService.createOrder(OrderService.java:88)
+  at com.demo.OrderController.post(OrderController.java:42)
+Caused by: java.net.SocketTimeoutException: Read timed out

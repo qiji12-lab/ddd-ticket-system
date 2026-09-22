@@ -1,0 +1,12 @@
+com\ticketide\state\TicketStatusMachineTest$IllegalTransitions.class
+com\ticketide\state\TicketStatusMachineTest$LegalTransitions.class
+com\ticketide\service\impl\RatingServiceImplTest.class
+com\ticketide\service\impl\TicketServiceImplTest$CancelTicket.class
+com\ticketide\service\impl\TicketServiceImplTest.class
+com\ticketide\interceptor\RateLimitInterceptorTest$DummyController.class
+com\ticketide\service\impl\TicketServiceImplTest$GrabTicket.class
+com\ticketide\service\impl\TicketServiceImplTest$TimeoutProcess.class
+com\ticketide\service\impl\TicketServiceImplTest$TransferTicket.class
+com\ticketide\interceptor\RateLimitInterceptorTest.class
+com\ticketide\service\impl\TicketServiceImplTest$EscalateTicket.class
+com\ticketide\state\TicketStatusMachineTest.class

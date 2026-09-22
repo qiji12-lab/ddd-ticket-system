@@ -1,0 +1,97 @@
+server:
+  port: 8080
+
+spring:
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB        # 单个文件最大 10MB
+      max-request-size: 50MB     # 单次请求最大 50MB（多附件总和）
+      file-size-threshold: 1MB   # 超过 1MB 才落盘（避免内存占用）
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/ticketide?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=utf8
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 30000
+      connection-timeout: 30000
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 10000ms
+      repositories:
+        enabled: false
+      redisson:
+        config: |
+          singleServerConfig:
+            address: "redis://localhost:6379"
+            
+            timeout: 10000
+            connectionPoolSize: 64
+            connectionMinimumIdleSize: 24
+
+  rabbitmq:
+    enabled: true  # RabbitMQ已通过Docker启动
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
+    publisher-confirm-type: correlated   # 生产者确认：消息到达交换机后异步回调，未确认则告警
+    publisher-returns: true              # 消息无法路由到任何队列时回调（配合 template.mandatory）
+    template:
+      mandatory: true
+    listener:
+      simple:
+        acknowledge-mode: manual         # 消费者手动 ACK：处理成功才 ack，失败 nack 进死信队列
+        prefetch: 10                     # 单消费者预取上限，避免一次性拉太多消息把内存打满
+        concurrency: 1
+        max-concurrency: 10
+        missing-queues-fatal: false
+
+  mail:
+    enabled: false  # 配置真实邮箱后改为true启用真实发送，否则仅记录日志模拟
+    host: smtp.qq.com
+    port: 587
+    username: your_email@qq.com        # 替换为你的QQ邮箱
+    password: your_email_password      # 替换为QQ邮箱SMTP授权码（非登录密码，设置-账户-开启SMTP获取）
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+      table-underline: true
+  mapper-locations: classpath:mapper/**/*.xml
+
+logging:
+  level:
+    root: DEBUG
+    com.ticketide: DEBUG
+
+jwt:
+  secret: "TickeTide2026SecretKeyForJwtTokenGenerationAndValidation!!"
+  expiration: 86400000  # 24小时（毫秒）
+
+ticketide:
+  upload-path: ./uploads            # 附件存储根目录（项目工作目录下）
+  max-file-size: 10485760           # 业务层附件大小上限（10MB = 10485760 字节）
+  timeout-scan-interval-ms: 600000  # 工单超时扫描间隔（10分钟）
+  timeout-scan-initial-delay-ms: 60000  # 应用启动后首次扫描延迟（1分钟，避开启动抖动）
+  pending-timeout-hours: 2          # 待接单超过该小时数提醒管理员
+  confirm-timeout-hours: 24         # 待确认超过该小时数自动关闭并默认好评
