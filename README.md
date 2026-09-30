@@ -50,15 +50,15 @@
 
 ### 1. DDD 四层架构图
 
-`![DDD架构图](docs/images/ddd-architecture.png)`
+![DDD架构图](docs/images/ddd-architecture.png)
 
 ### 2. 工单状态流转图
 
-`![状态流转图](docs/images/state-machine.png)`
+![状态流转图](docs/images/state-machine.png)
 
 ### 3. 抢单并发时序图
 
-`![抢单时序图](docs/images/redisson-sequence.png)`
+![抢单时序图](docs/images/redisson-sequence.png)
 
 ---
 
@@ -82,8 +82,15 @@ npm install
 npm run dev
 浏览器访问 http://localhost:5173 即可体验。
 
-方式二：本地手动启动
-环境要求：JDK 17, Maven 3.8+, Node.js 18+, MySQL 8.0, Redis, RabbitMQ。
+### 方式二：本地手动启动
+
+**环境要求：**
+- JDK 17
+- Maven 3.8+
+- Node.js 18+
+- MySQL 8.0
+- Redis
+- RabbitMQ
 
 导入 init.sql 到 MySQL，创建数据库 ticket_db。
 
@@ -105,21 +112,26 @@ npm run dev
 👉 http://localhost:8080/doc.html
 
 👤 测试账号
-角色	用户名	密码
-管理员	admin	123456
-客服	agent1	123456
-普通用户	user1	123456
-注：数据库中的密码已通过 BCrypt 加盐哈希存储。
 
-📂 项目结构
-text
+| 角色 | 用户名 | 密码 |
+| :--- | :--- | :--- |
+| 管理员 | `admin` | `123456` |
+| 客服 | `agent1` | `123456` |
+| 普通用户 | `user1` | `123456` |
+
+> 注：数据库中的密码已通过 BCrypt 加盐哈希存储。
+
+📁 项目结构
+
+```text
 ddd-ticket-system
-├── ticket-common          # 公共模块（统一响应、全局异常、工具类）
-├── ticket-domain          # 领域层（实体、值对象、领域服务、仓储接口）
-├── ticket-infrastructure  # 基础设施层（MyBatis 实现、Redis、MQ 配置）
-├── ticket-application     # 应用层（应用服务、DTO 转换、事件监听）
-├── ticket-interfaces      # 接口层（Controller、定时任务）
-├── ticket-start           # 启动模块（Application、配置文件）
-├── frontend               # 前端工程（Vue 3 + Element Plus）
-├── docker-compose.yml     # 中间件容器编排
-└── init.sql               # 数据库初始化脚本
+├── ticket-common         # 公共模块（统一响应、全局异常、工具类）
+├── ticket-domain         # 领域层（实体、值对象、领域服务、仓储接口）
+├── ticket-infrastructure # 基础设施层（MyBatis 实现、Redis、MQ 配置）
+├── ticket-application    # 应用层（应用服务、DTO 转换、事件监听）
+├── ticket-interfaces     # 接口层（Controller、定时任务）
+├── ticket-start          # 启动模块（Application、配置文件）
+├── frontend              # 前端工程（Vue 3 + Element Plus）
+├── docker-compose.yml    # 中间件容器编排
+└── init.sql              # 数据库初始化脚本
+```
