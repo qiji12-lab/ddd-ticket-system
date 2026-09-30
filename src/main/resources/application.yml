@@ -10,7 +10,7 @@ spring:
       file-size-threshold: 1MB   # 超过 1MB 才落盘（避免内存占用）
 
   datasource:
-    url: jdbc:mysql://localhost:3306/ticketide?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=utf8
+    url: jdbc:mysql://localhost:3306/ticketide?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&connectionCollation=utf8mb4_unicode_ci
     username: root
     password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -24,6 +24,7 @@ spring:
     redis:
       host: localhost
       port: 6379
+      password: "123456"   # 与 docker-compose.yml 中 Redis requirepass 保持一致
       timeout: 10000ms
       repositories:
         enabled: false
@@ -31,7 +32,7 @@ spring:
         config: |
           singleServerConfig:
             address: "redis://localhost:6379"
-            
+            password: "123456"
             timeout: 10000
             connectionPoolSize: 64
             connectionMinimumIdleSize: 24
@@ -40,8 +41,8 @@ spring:
     enabled: true  # RabbitMQ已通过Docker启动
     host: localhost
     port: 5672
-    username: guest
-    password: guest
+    username: ticketide   # 与 docker-compose.yml 中 RABBITMQ_DEFAULT_USER 保持一致（guest 用户禁止非 localhost 连接）
+    password: "123456"
     virtual-host: /
     publisher-confirm-type: correlated   # 生产者确认：消息到达交换机后异步回调，未确认则告警
     publisher-returns: true              # 消息无法路由到任何队列时回调（配合 template.mandatory）

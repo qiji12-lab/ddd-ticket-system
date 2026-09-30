@@ -1,0 +1,87 @@
+# ============================================================
+# TickeTide 轻量级工单管理系统 - 本地开发中间件一键启动
+#
+# 启动:  docker compose up -d        （Docker Compose V2，推荐）
+#        docker-compose up -d        （旧版 Compose V1）
+# 停止:  docker compose down
+# 清空数据重建（含重新执行 init.sql）: docker compose down -v
+#
+# 凭据说明（与 src/main/resources/application.yml 保持一致）:
+#   MySQL    root / 123456，数据库 ticketide
+#   Redis    密码 123456
+#   RabbitMQ ticketide / 123456（Web 管理界面同样使用该账号）
+# ============================================================
+
+services:
+  # ---------------- MySQL 8.0 数据库 ----------------
+  mysql:
+    image: mysql:8.0
+    container_name: ticketide-mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"
+      MYSQL_DATABASE: "ticketide"   # 容器首次启动自动创建该数据库
+      TZ: Asia/Shanghai
+    command:
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --default-time-zone=+08:00
+    volumes:
+      # 首次启动且数据目录为空时自动执行 init.sql 初始化表结构和数据
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p123456"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ---------------- Redis 7.x 缓存 / 分布式锁 ----------------
+  # 使用 alpine 变体：同为 Redis 7 官方镜像，体积小、拉取快，requirepass 等行为完全一致
+  redis:
+    image: redis:7-alpine
+    container_name: ticketide-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    environment:
+      TZ: Asia/Shanghai
+    command: redis-server --requirepass 123456
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "123456", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ---------------- RabbitMQ 3.12 消息队列 ----------------
+  # 注意：RabbitMQ 默认 guest 用户禁止通过非 localhost 连接，
+  # 后端经 Docker 端口映射连接会被拒绝，因此这里创建专用用户 ticketide。
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: ticketide-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"     # AMQP 通信端口
+      - "15672:15672"   # Web 管理界面: http://localhost:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: "ticketide"
+      RABBITMQ_DEFAULT_PASS: "123456"
+      RABBITMQ_DEFAULT_VHOST: "/"
+      TZ: Asia/Shanghai
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+# ---------------- 持久化数据卷 ----------------
+volumes:
+  mysql_data:
+  redis_data:
+  rabbitmq_data:

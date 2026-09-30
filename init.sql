@@ -9,6 +9,9 @@ DROP DATABASE IF EXISTS ticketide;
 CREATE DATABASE ticketide DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE ticketide;
 
+-- 确保导入时使用 utf8mb4 连接字符集，避免中文被双重编码（mojibake）
+SET NAMES utf8mb4;
+
 -- ============================================================
 -- 1. 用户表 t_user
 -- ============================================================
