@@ -43,15 +43,7 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
         String token = jwtUtil.extractToken(authHeader);
 
         if (token == null) {
-            // 兼容过渡期：尝试从 X-User-Id 获取
-            String userIdHeader = request.getHeader("X-User-Id");
-            if (userIdHeader != null && !userIdHeader.isEmpty()) {
-                try {
-                    return Long.parseLong(userIdHeader);
-                } catch (NumberFormatException e) {
-                    return null;
-                }
-            }
+            // 只信任 JWT，不读取客户端可伪造的 X-User-Id 头，避免身份冒充
             return null;
         }
 

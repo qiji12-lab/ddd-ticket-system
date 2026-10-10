@@ -97,8 +97,12 @@ CREATE TABLE IF NOT EXISTS t_ticket_rating (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='工单满意度评价表';
 
 
+-- 种子用户（与 init.sql 保持一致，避免两份脚本数据漂移）
+-- 密码统一使用 BCrypt 哈希（明文均为 123456），与 init.sql 完全相同，
+-- DataInitializer 启动时会校验哈希，若被误改为明文会自动重哈希。
 INSERT INTO t_user (username, password, email, role) VALUES
-('admin', '123456', 'admin@ticketide.com', 'ADMIN'),
-('agent001', '123456', 'agent001@ticketide.com', 'AGENT'),
-('customer001', '123456', 'customer001@ticketide.com', 'CUSTOMER'),
-('customer002', '123456', 'customer002@ticketide.com', 'CUSTOMER');
+('admin',     '$2a$10$N.ZOn9G6/YLFixAOPMg/h.z7pCu6v2XyFDtC4q.jeeGm/TEZyj3C6', 'admin@ticketide.com',     'ADMIN'),
+('agent01',   '$2a$10$N.ZOn9G6/YLFixAOPMg/h.z7pCu6v2XyFDtC4q.jeeGm/TEZyj3C6', 'agent01@ticketide.com',   'AGENT'),
+('agent02',   '$2a$10$N.ZOn9G6/YLFixAOPMg/h.z7pCu6v2XyFDtC4q.jeeGm/TEZyj3C6', 'agent02@ticketide.com',   'AGENT'),
+('customer01','$2a$10$N.ZOn9G6/YLFixAOPMg/h.z7pCu6v2XyFDtC4q.jeeGm/TEZyj3C6','customer01@ticketide.com','CUSTOMER'),
+('customer02','$2a$10$N.ZOn9G6/YLFixAOPMg/h.z7pCu6v2XyFDtC4q.jeeGm/TEZyj3C6','customer02@ticketide.com','CUSTOMER');

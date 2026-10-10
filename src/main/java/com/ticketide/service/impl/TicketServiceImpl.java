@@ -310,12 +310,31 @@ public class TicketServiceImpl implements TicketService {
             throw new BusinessException("工单不存在");
         }
 
-        TicketStatus targetStatus = TicketStatus.fromCode(request.getTargetStatus());
-
         // 取消属于"客户主动终止"的独立用例，必须走 /cancel 接口以执行"仅创建人本人或管理员"的权限校验，
         // 这里直接拒绝，防止有人通过通用状态接口绕过权限取消他人的工单
-        if (TicketStatus.CANCELLED == targetStatus) {
+        if (TicketStatus.CANCELLED == TicketStatus.fromCode(request.getTargetStatus())) {
             throw new BusinessException("请通过取消工单接口执行取消操作");
+        }
+
+        // 数据权限（服务端强制，防止越权改他人工单状态）：
+        // - 管理员：任意工单的合法流转；
+        // - 客服：只能流转自己负责的工单（防止借通用接口绕过抢单/解决接口的归属校验）；
+        // - 客户：只能流转自己创建的工单，且仅限"确认关闭 / 驳回重开"这两个客户语义动作
+        User operator = userService.getUserById(operatorId);
+        if (operator == null) {
+            throw new BusinessException("用户不存在");
+        }
+        TicketStatus targetStatus = TicketStatus.fromCode(request.getTargetStatus());
+        if (!isAdmin(operator)) {
+            boolean isCreator = operatorId.equals(ticket.getCustomerId());
+            boolean isAgent = operatorId.equals(ticket.getAgentId());
+            if (!isCreator && !isAgent) {
+                throw new BusinessException("无权操作此工单");
+            }
+            if (isCreator && !isAgent
+                    && targetStatus != TicketStatus.CLOSED && targetStatus != TicketStatus.REOPENED) {
+                throw new BusinessException("客户只能确认关闭或驳回重开工单");
+            }
         }
 
         statusMachine.changeStatus(ticket, targetStatus);
@@ -342,6 +361,10 @@ public class TicketServiceImpl implements TicketService {
         User assignee = userService.getUserById(assigneeId);
         if (assignee == null) {
             throw new BusinessException("经办人不存在");
+        }
+        // 只能派单给客服角色，防止把工单派给普通客户导致其获得处理权限
+        if (!UserRole.AGENT.getCode().equals(assignee.getRole())) {
+            throw new BusinessException("只能指派给客服（AGENT）角色");
         }
 
         ticket.setAgentId(assigneeId);
@@ -539,6 +562,14 @@ public class TicketServiceImpl implements TicketService {
         User operator = userService.getUserById(operatorId);
         if (operator == null) {
             throw new BusinessException("用户不存在");
+        }
+
+        // 防止"偷单"：工单已被管理员派给其他客服时，其他客服不能通过接单接口把单据据为己有；
+        // 已绑定经办人且不是本人、又不是管理员操作 → 明确拒绝
+        if (ticket.getAgentId() != null
+                && !operatorId.equals(ticket.getAgentId())
+                && !isAdmin(operator)) {
+            throw new BusinessException("该工单已被其他客服接单");
         }
 
         ticket.setAgentId(operatorId);

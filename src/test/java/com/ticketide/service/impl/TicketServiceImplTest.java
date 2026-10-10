@@ -182,6 +182,55 @@ class TicketServiceImplTest {
         }
     }
 
+    // ==================== 接单 / 派单 ====================
+
+    @Nested
+    @DisplayName("接单与派单：防止偷单与错误指派")
+    class TakeAndAssign {
+
+        @Test
+        @DisplayName("接单：客服不能把管理员已派给他人的工单据为己有")
+        void shouldRejectTakingTicketAssignedToOtherAgent() {
+            // 工单已被派给客服2，客服3 尝试通过接单接口"偷单"
+            when(ticketMapper.selectById(31L)).thenReturn(buildTicket(31L, TicketStatus.ASSIGNED, 4L, 2L));
+            when(userService.getUserById(3L)).thenReturn(buildUser(3L, "agent02", UserRole.AGENT));
+
+            BusinessException ex = assertThrows(BusinessException.class,
+                    () -> ticketService.takeTicket(31L, 3L));
+
+            assertTrue(ex.getMessage().contains("已被其他客服接单"));
+            verify(statusMachine, never()).changeStatus(any(), any());
+            verify(ticketMapper, never()).updateById(any());
+        }
+
+        @Test
+        @DisplayName("接单：工单原经办人本人可以继续接单处理")
+        void shouldAllowOriginalAgentToTakeOwnTicket() {
+            Ticket assigned = buildTicket(32L, TicketStatus.ASSIGNED, 4L, 2L);
+            when(ticketMapper.selectById(32L)).thenReturn(assigned);
+            when(userService.getUserById(2L)).thenReturn(buildUser(2L, "agent01", UserRole.AGENT));
+            when(ticketMapper.updateById(assigned)).thenReturn(1);
+
+            Ticket result = ticketService.takeTicket(32L, 2L);
+
+            assertEquals(2L, result.getAgentId());
+            verify(statusMachine).changeStatus(assigned, TicketStatus.PROCESSING);
+        }
+
+        @Test
+        @DisplayName("派单：只能指派给客服角色，不能派给普通客户")
+        void shouldRejectAssigningToCustomer() {
+            when(ticketMapper.selectById(33L)).thenReturn(buildTicket(33L, TicketStatus.PENDING, 4L, null));
+            when(userService.getUserById(5L)).thenReturn(buildUser(5L, "customer02", UserRole.CUSTOMER));
+
+            BusinessException ex = assertThrows(BusinessException.class,
+                    () -> ticketService.assignTicket(33L, 5L, 1L));
+
+            assertTrue(ex.getMessage().contains("AGENT"));
+            verify(ticketMapper, never()).updateById(any());
+        }
+    }
+
     // ==================== 转交 ====================
 
     @Nested
@@ -360,6 +409,72 @@ class TicketServiceImplTest {
 
             assertTrue(ex.getMessage().contains("取消工单接口"));
             verify(statusMachine, never()).changeStatus(any(), any());
+        }
+
+        @Test
+        @DisplayName("越权防护：用户不能通过通用状态接口流转他人的工单")
+        void shouldRejectStatusChangeOnOthersTicket() {
+            // 工单属于客户4、经办客服2，操作人是毫无关系的客户5
+            when(ticketMapper.selectById(15L)).thenReturn(buildTicket(15L, TicketStatus.PROCESSING, 4L, 2L));
+            when(userService.getUserById(5L)).thenReturn(buildUser(5L, "customer02", UserRole.CUSTOMER));
+
+            TicketStatusChangeRequest request = new TicketStatusChangeRequest();
+            request.setTargetStatus(TicketStatus.RESOLVED.getCode());
+
+            BusinessException ex = assertThrows(BusinessException.class,
+                    () -> ticketService.updateTicketStatus(15L, request, 5L));
+
+            assertTrue(ex.getMessage().contains("无权操作此工单"));
+            verify(statusMachine, never()).changeStatus(any(), any());
+        }
+
+        @Test
+        @DisplayName("越权防护：客服不能借通用状态接口解决别人负责的工单")
+        void shouldRejectAgentResolvingOthersTicket() {
+            when(ticketMapper.selectById(16L)).thenReturn(buildTicket(16L, TicketStatus.PROCESSING, 4L, 2L));
+            when(userService.getUserById(8L)).thenReturn(buildUser(8L, "agent03", UserRole.AGENT));
+
+            TicketStatusChangeRequest request = new TicketStatusChangeRequest();
+            request.setTargetStatus(TicketStatus.RESOLVED.getCode());
+
+            BusinessException ex = assertThrows(BusinessException.class,
+                    () -> ticketService.updateTicketStatus(16L, request, 8L));
+
+            assertTrue(ex.getMessage().contains("无权操作此工单"));
+            verify(statusMachine, never()).changeStatus(any(), any());
+        }
+
+        @Test
+        @DisplayName("越权防护：客户通过通用状态接口只能确认关闭或驳回重开")
+        void shouldRejectCustomerIllegalTargetStatus() {
+            when(ticketMapper.selectById(17L)).thenReturn(buildTicket(17L, TicketStatus.PROCESSING, 4L, 2L));
+            when(userService.getUserById(4L)).thenReturn(buildUser(4L, "customer01", UserRole.CUSTOMER));
+
+            TicketStatusChangeRequest request = new TicketStatusChangeRequest();
+            request.setTargetStatus(TicketStatus.PROCESSING.getCode());
+
+            BusinessException ex = assertThrows(BusinessException.class,
+                    () -> ticketService.updateTicketStatus(17L, request, 4L));
+
+            assertTrue(ex.getMessage().contains("确认关闭或驳回重开"));
+            verify(statusMachine, never()).changeStatus(any(), any());
+        }
+
+        @Test
+        @DisplayName("客户确认关闭自己的待确认工单：通用状态接口放行并走状态机")
+        void shouldAllowCustomerCloseOwnPendingConfirmTicket() {
+            Ticket pendingConfirm = buildTicket(18L, TicketStatus.PENDING_CONFIRM, 4L, 2L);
+            when(ticketMapper.selectById(18L)).thenReturn(pendingConfirm);
+            when(userService.getUserById(4L)).thenReturn(buildUser(4L, "customer01", UserRole.CUSTOMER));
+            when(ticketMapper.updateById(pendingConfirm)).thenReturn(1);
+
+            TicketStatusChangeRequest request = new TicketStatusChangeRequest();
+            request.setTargetStatus(TicketStatus.CLOSED.getCode());
+
+            Ticket result = ticketService.updateTicketStatus(18L, request, 4L);
+
+            assertNotNull(result);
+            verify(statusMachine).changeStatus(pendingConfirm, TicketStatus.CLOSED);
         }
     }
 

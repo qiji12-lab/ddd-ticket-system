@@ -10,7 +10,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 /**
  * 当前登录用户上下文。
  * <p>
- * 从当前请求的 {@code Authorization: Bearer <token>}（兼容过渡期的 {@code X-User-Id}）解析 userId，
+ * 从当前请求的 {@code Authorization: Bearer <token>} 解析 userId，
  * 供 AOP 切面等"非 Controller"场景获取操作人，避免为了记日志而在每个业务方法上都挂一个 operatorId 参数。
  */
 @Component
@@ -34,24 +34,15 @@ public class CurrentUserContext {
 
     public Long resolve(HttpServletRequest request) {
         String token = jwtUtil.extractToken(request.getHeader("Authorization"));
-        if (token != null) {
-            try {
-                return jwtUtil.parseToken(token).get("userId", Long.class);
-            } catch (Exception e) {
-                log.warn("解析 JWT 失败: {}", e.getMessage());
-                return null;
-            }
+        if (token == null) {
+            // 只信任 JWT：X-User-Id 请求头可被客户端任意伪造，不能作为身份来源
+            return null;
         }
-
-        // 兼容过渡期：从 X-User-Id 获取
-        String userIdHeader = request.getHeader("X-User-Id");
-        if (userIdHeader != null && !userIdHeader.isEmpty()) {
-            try {
-                return Long.parseLong(userIdHeader);
-            } catch (NumberFormatException e) {
-                log.warn("X-User-Id 格式错误: {}", userIdHeader);
-            }
+        try {
+            return jwtUtil.parseToken(token).get("userId", Long.class);
+        } catch (Exception e) {
+            log.warn("解析 JWT 失败: {}", e.getMessage());
+            return null;
         }
-        return null;
     }
 }
