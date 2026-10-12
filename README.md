@@ -77,9 +77,11 @@
 进入前端目录启动：
 
 bash
+```
 cd frontend
 npm install
 npm run dev
+```
 浏览器访问 http://localhost:5173 即可体验。
 
 ### 方式二：本地手动启动
@@ -97,15 +99,17 @@ npm run dev
 修改后端 application.yml 中的数据库、Redis、RabbitMQ 连接信息。
 
 启动后端：
-
 bash
+```
 mvn spring-boot:run
+```
 启动前端：
-
 bash
+```
 cd frontend
 npm install
 npm run dev
+```
 📚 API 文档
 项目启动后，访问 Knife4j 接口文档：
 
