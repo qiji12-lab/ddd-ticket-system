@@ -48,19 +48,88 @@
 
 ## 🏗️ 系统架构设计
 
-### 1. DDD 四层架构图
+### 整体架构图（DDD 四层）
 
-![DDD架构图](docs/images/ddd-architecture.png)
+```mermaid
+flowchart TB
+    subgraph IF["Interfaces 用户接口层"]
+        C["Controller"]
+        DTO["DTO 参数校验"]
+        VO["VO 视图转换"]
+        C --> DTO --> VO
+    end
 
-### 2. 工单状态流转图
+    subgraph APP["Application 应用层"]
+        APP_SVC["TicketAppService<br/>流程编排"]
+        EVENT_LISTENER["领域事件监听器"]
+    end
 
-![状态流转图](docs/images/state-machine.png)
+    subgraph DOMAIN["Domain 领域层（核心，纯净）"]
+        TICKET["Ticket 聚合根"]
+        STATUS["TicketStatus 值对象"]
+        PRIORITY["TicketPriority 值对象"]
+        REPO_IF["TicketRepository 接口"]
+        EVENT["TicketStatusChangedEvent"]
+        TICKET --> STATUS
+        TICKET --> PRIORITY
+        TICKET --> EVENT
+    end
 
-### 3. 抢单并发时序图
+    subgraph INFRA["Infrastructure 基础设施层"]
+        REPO_IMPL["TicketRepositoryImpl<br/>MyBatis-Plus"]
+        MAPSTRUCT["MapStruct<br/>PO/Entity 转换"]
+        LOCK["Redisson RLock<br/>分布式锁"]
+        MQ["RabbitMQ<br/>Producer/Consumer"]
+    end
 
-![抢单时序图](docs/images/redisson-sequence.png)
+    C --> APP_SVC
+    APP_SVC --> TICKET
+    APP_SVC --> REPO_IF
+    APP_SVC --> LOCK
+    APP_SVC --> MQ
+    EVENT_LISTENER --> MQ
+    REPO_IMPL -.实现.-> REPO_IF
+    REPO_IMPL --> MAPSTRUCT
+    EVENT -.领域事件.-> EVENT_LISTENER
+```
 
----
+### 状态机图
+
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING: 创建工单
+    PENDING --> PROCESSING: 接单/抢单成功
+    PROCESSING --> RESOLVED: 处理完成
+    RESOLVED --> CLOSED: 确认关闭/评价完成
+    CLOSED --> [*]
+```
+
+### 抢单时序图
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor CS as 客服
+    participant IF as Interfaces 接口层
+    participant APP as Application 应用层
+    participant LOCK as Redisson RLock
+    participant DOM as Domain 领域层
+    participant REPO as TicketRepository
+
+    CS->>IF: 发起抢单(ticketId, userId)
+    IF->>APP: 调用抢单应用服务
+    APP->>LOCK: 获取 ticketId 对应 RLock
+    LOCK-->>APP: 获取锁成功
+    Note over LOCK,APP: 看门狗 Watch Dog 自动续期
+    APP->>DOM: ticket.assignTo(userId)
+    DOM->>DOM: 校验状态与业务规则
+    DOM-->>APP: 返回领域结果/发布领域事件
+    APP->>REPO: 保存 Ticket
+    REPO-->>APP: 保存成功
+    APP->>LOCK: finally 释放锁
+    APP-->>IF: 返回抢单结果
+    IF-->>CS: 成功/失败响应
+```
 
 ## 🧪 测试与质量保证 (Testing & QA)
 
